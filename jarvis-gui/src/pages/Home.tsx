@@ -1,46 +1,52 @@
 import { useState } from "react";
+import ChatHeader from "../component/ChatHeader";
+import ChatMessages from "../component/ChatMessages";
+import ChatInput from "../component/ChatInput";
 import { streamChat } from "../helper/streamChat";
+import Sidebar from "../component/Sidebar";
 
-function Home() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
+
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export default function ChatPage() {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const sendMessage = async (input: string) => {
 
-    const sendMessage = async () => {
-        setOutput("");
-        setLoading(true);
+    setMessages((prev) => [...prev, { role: "user", content: input }, { role: "assistant", content: "" }]);
+    setLoading(true);
 
-        await streamChat(
-            input,
-            (token) => setOutput(prev => prev + token),
-            () => setLoading(false)
-        );
-        
-    }
+    await streamChat(
+      input,
+      (token) => {
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated.length - 1;
+
+          if (updated[last].role === "assistant") {
+            updated[last].content += token;
+          }
+
+          return updated;
+        });
+      },
+      () => setLoading(false)
+    );
+  };
+
   return (
-    <>
-      <div style={{ padding: 20 }}>
-        <h2>Jarvis (Streaming Test)</h2>
+    <div className="h-screen flex bg-black">
+      <Sidebar />
 
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type something..."
-          style={{ width: "300px", marginRight: "10px" }}
-        />
-
-        <button onClick={sendMessage}>Send</button>
-
-        <div style={{ marginTop: 20 }}>
-          <strong>Response:</strong>
-          <div>{output}</div>
-        </div>
-
-        {loading && <p>Loading...</p>}
+      <div className="flex-1 flex flex-col">
+        <ChatHeader />
+        <ChatMessages messages={messages} />
+        <ChatInput onSend={sendMessage} loading={loading} />
       </div>
-    </>
+    </div>
   );
 }
-
-export default Home;
