@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.env/
+.env
+
+# FastAPI / logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# pytest (if you add later)
+.pytest_cache/
+
+# mypy / typing
+.mypy_cache/
+
+# pip-tools (keep these!)
+# requirements.txt ✅ keep
+# requirements.in  ✅ keep
