@@ -8,7 +8,7 @@ router = APIRouter(tags=["chat"])
 async def chat(query:dict):
     msg = query["message"]
     
-    response = response = requests.post(
+    response = requests.post(
         settings.OLLAMA_URL,
         json={
             "model": "llama3:8b",

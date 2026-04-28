@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import ChatApiRouter
+from .routers import router
 
 app = FastAPI()
 
@@ -12,7 +12,7 @@ app.add_middleware(
     allow_headers=["*"],
     
 )
-app.include_router(ChatApiRouter)
+app.include_router(router)
 
 @app.get("/health")
 def health():
