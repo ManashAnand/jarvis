@@ -3,3 +3,7 @@ uvicorn[standard]
 python-dotenv
 requests
 httpx
+faster-whisper 
+TTS 
+requests 
+pydub
