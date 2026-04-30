@@ -55,3 +55,7 @@ src-tauri/target/debug/
 
 # Vite cache
 .vite/
+
+
+#input audio files
+input_audio/*

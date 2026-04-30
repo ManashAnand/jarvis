@@ -28,3 +28,6 @@ venv/
 # pip-tools (keep these!)
 # requirements.txt ✅ keep
 # requirements.in  ✅ keep
+
+app/input-audio-files/*
+app/output-audio-files/*

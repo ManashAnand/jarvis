@@ -5,6 +5,14 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+  {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        {
+          "path": "$HOME/Desktop/projects/jarvis/jarvis-gui/input_audio/*"
+        }
+      ]
+    }
   ]
 }

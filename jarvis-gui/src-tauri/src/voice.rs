@@ -1,5 +1,5 @@
+use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
-use std::sync::{ mpsc::Sender};
 pub struct RecorderState {
     pub stop_tx: Option<Sender<()>>,
     pub file_path: Option<String>,
@@ -89,16 +89,25 @@ pub fn start_recording(state: tauri::State<Mutex<RecorderState>>) {
 }
 
 #[tauri::command]
-pub fn stop_recording(state: tauri::State<Mutex<RecorderState>>) -> String {
-    let mut state = state.lock().unwrap();
+pub fn stop_recording(
+    state: tauri::State<std::sync::Mutex<RecorderState>>,
+) -> Result<String, String> {
+    let mut state = state.lock().map_err(|_| "state poisoned")?;
 
-    if let Some(tx) = state.stop_tx.take() {
-        tx.send(()).unwrap();
+    // if not recording, return error instead of panicking
+    if state.stop_tx.is_none() || state.file_path.is_none() {
+        return Err("Not currently recording".into());
     }
 
-    let path = state.file_path.take().unwrap();
+    // send stop signal
+    if let Some(tx) = state.stop_tx.take() {
+        let _ = tx.send(()); // ignore send error (thread may have exited)
+    }
+
+    // get path safely
+    let path = state.file_path.take().ok_or("Missing file path")?;
 
     println!("🛑 Recording stopped");
 
-    path
+    Ok(path)
 }
