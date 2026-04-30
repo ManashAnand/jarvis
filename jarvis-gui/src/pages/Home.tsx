@@ -1,39 +1,23 @@
-import { useState } from "react";
 import ChatHeader from "../component/ChatHeader";
 import ChatMessages from "../component/ChatMessages";
 import ChatInput from "../component/ChatInput";
 import { streamChat } from "../helper/streamChat";
 import Sidebar from "../component/Sidebar";
+import { useChatStore } from "../store/chatStore";
 
-
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-};
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
+  const {  addUserMessage, addAssistantMessage, appendToLastMessage, setLoading, loading } = useChatStore();
 
   const sendMessage = async (input: string) => {
+    addUserMessage(input);
+    addAssistantMessage("");
 
-    setMessages((prev) => [...prev, { role: "user", content: input }, { role: "assistant", content: "" }]);
     setLoading(true);
 
     await streamChat(
       input,
-      (token) => {
-        setMessages((prev) => {
-          const updated = [...prev];
-          const last = updated.length - 1;
-
-          if (updated[last].role === "assistant") {
-            updated[last].content += token;
-          }
-
-          return updated;
-        });
-      },
+      (token) => appendToLastMessage(token),
       () => setLoading(false)
     );
   };
@@ -44,7 +28,7 @@ export default function ChatPage() {
 
       <div className="flex-1 flex flex-col">
         <ChatHeader />
-        <ChatMessages messages={messages} />
+        <ChatMessages />
         <ChatInput onSend={sendMessage} loading={loading} />
       </div>
     </div>

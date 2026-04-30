@@ -1,9 +1,9 @@
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-};
+import { useChatStore } from "../store/chatStore";
 
-export default function ChatMessages({ messages }: { messages: Message[] }) {
+
+export default function ChatMessages() {
+
+    const { messages } = useChatStore();
   return (
     <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#020617]">
       {messages.map((msg, i) => (

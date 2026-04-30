@@ -1,9 +1,12 @@
+import shutil
+import base64
+
 from fastapi import APIRouter,UploadFile,File
+from fastapi.responses import JSONResponse
+
 from ..services.voice_services.stt import speech_to_text
 from ..services.voice_services.llm import call_llm
 from ..services.voice_services.tts import text_to_speech
-from fastapi.responses import FileResponse
-import shutil
 from ..config.settings import settings
 
 router = APIRouter(tags=["sync voice"])
@@ -23,5 +26,14 @@ async def voice_chat(file: UploadFile = File(...)):
 
         # TTS
         text_to_speech(response_text, settings.output_path_voice)
+        
+        with open(settings.output_path_voice, "rb") as f:
+            audio_bytes = f.read()
 
-        return FileResponse(settings.output_path_voice, media_type="audio/wav")
+        audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
+
+        return JSONResponse({
+            "user_text": user_text,
+            "response_text": response_text,
+            "audio": audio_base64
+        })

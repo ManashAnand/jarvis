@@ -1,13 +1,15 @@
 import { useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
-import {api} from "../constants/constant"
+import { api } from "../constants/constant";
+import { useChatStore } from "../store/chatStore";
 
-
-export default function VoiceTest() {
+export default function VoiceTest({  }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const startTimeRef = useRef<number>(0);
+
+  const { addUserMessage, addAssistantMessage } = useChatStore();
 
   const handleClick = async () => {
     try {
@@ -49,18 +51,19 @@ export default function VoiceTest() {
         throw new Error("Backend error: " + res.status);
       }
 
-      const audioBlob = await res.blob();
 
-      if (audioBlob.size < 1000) {
-        throw new Error("Empty audio response");
-      }
+      const data = await res.json();
+      
+      addUserMessage(data.user_text);
+      addAssistantMessage(data.response_text);
+
+      const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+      const audioBlob = new Blob([audioBytes], { type: "audio/wav" });
 
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
 
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-      };
+      audio.onended = () => URL.revokeObjectURL(audioUrl);
 
       await audio.play();
     } catch (err) {
@@ -72,13 +75,15 @@ export default function VoiceTest() {
   };
 
   return (
-    <div>
+    <div className="p-2">
       <button onClick={handleClick} disabled={isProcessing}>
-        {isProcessing
-          ? "Processing..."
-          : isRecording
-            ? "Stop Recording"
-            : "Start Recording"}
+        {isProcessing ? (
+          <span className="animate-spin">⏳</span>
+        ) : isRecording ? (
+          <span>🛑</span>
+        ) : (
+          <span>🎤</span>
+        )}
       </button>
     </div>
   );

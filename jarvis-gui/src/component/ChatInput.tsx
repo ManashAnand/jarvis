@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import VoiceTest from "../pages/Voice-test";
 
 export default function ChatInput({
   onSend,
@@ -33,7 +33,9 @@ export default function ChatInput({
         >
           ➤
         </button>
-        <Link to={'/voice'} className="p-2 bg-blue-400 text-white">Voice</Link>
+        <VoiceTest
+         
+        />
       </div>
     </div>
   );
