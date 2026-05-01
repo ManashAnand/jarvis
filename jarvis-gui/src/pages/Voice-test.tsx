@@ -5,36 +5,80 @@ import { api } from "../constants/constant";
 import { useChatStore } from "../store/chatStore";
 import { streamChat } from "../helper/streamChat";
 
-export default function VoiceTest({  }) {
+export default function VoiceTest() {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const startTimeRef = useRef<number>(0);
 
-  const { addUserMessage,addAssistantMessage ,appendToLastMessage, setLoading } = useChatStore();
+  const { addUserMessage, addAssistantMessage, appendToLastMessage, setLoading } =
+    useChatStore();
 
+  // 🧠 TTS QUEUE SYSTEM
+  const queueRef = useRef<string[]>([]);
+  const isPlayingRef = useRef(false);
 
-   async function playTTS(text: string) {
-      const res = await fetch(`${api}/tts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text }),
-      });
+  // 🔊 Clean + normalize text
+  function cleanText(text: string) {
+    return text
+      .replace(/[*#`]/g, "")
+      .replace(/\n+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
 
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+  // 🔊 Play single audio
+  async function playTTS(text: string) {
+    const res = await fetch(`${api}/tts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text }),
+    });
 
-      const audio = new Audio(url);
-      audio.onended = () => URL.revokeObjectURL(url);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
 
-      await audio.play();
-    }
+    const audio = new Audio(url);
+
+    return new Promise<void>((resolve) => {
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        resolve();
+      };
+      audio.play();
+    });
+  }
+
+  // 🔁 Process queue sequentially
+  async function processQueue() {
+    if (isPlayingRef.current) return;
+    if (queueRef.current.length === 0) return;
+
+    isPlayingRef.current = true;
+
+    const text = queueRef.current.shift()!;
+    await playTTS(text);
+
+    isPlayingRef.current = false;
+    processQueue();
+  }
+
+  // ➕ Add to queue
+  function enqueueTTS(text: string) {
+    const cleaned = cleanText(text);
+
+    if (cleaned.length < 10) return;
+
+    queueRef.current.push(cleaned);
+    processQueue();
+  }
 
   const handleClick = async () => {
     try {
       if (isProcessing) return;
 
+      // 🎤 START RECORDING
       if (!isRecording) {
         await invoke("start_recording");
         startTimeRef.current = Date.now();
@@ -42,6 +86,7 @@ export default function VoiceTest({  }) {
         return;
       }
 
+      // 🛑 STOP RECORDING
       const duration = Date.now() - startTimeRef.current;
 
       if (duration < 1200) {
@@ -71,36 +116,35 @@ export default function VoiceTest({  }) {
         throw new Error("Backend error: " + res.status);
       }
 
-
       const data = await res.json();
-      
-      addUserMessage(data.user_text);
-      addAssistantMessage(""); 
 
-       let fullText = "";
+      // 💬 UI SETUP
+      addUserMessage(data.user_text);
+      addAssistantMessage("");
+
+      let buffer = "";
+
       await streamChat(
         data.user_text,
         (token) => {
-          fullText += token;
+          buffer += token;
           appendToLastMessage(token);
-        } ,
+
+          // 🧠 Sentence detection
+          if (/[.?!]/.test(buffer)) {
+            enqueueTTS(buffer);
+            buffer = "";
+          }
+        },
         async () => {
           setLoading(false);
 
-          // 🔊 play TTS AFTER streaming
-          const cleanText = fullText
-          .replace(/[*#`]/g, "")      // remove markdown
-          .replace(/\n+/g, " ")       // remove line breaks
-          .trim();
-
-          if (cleanText.length < 10) {
-            console.log("Text too small for TTS, skipping");
-            return;
+          // leftover text
+          if (buffer.length > 5) {
+            enqueueTTS(buffer);
           }
-          await playTTS(cleanText);
         }
-      )
-
+      );
     } catch (err) {
       console.error("Voice error:", err);
       alert("Something went wrong. Check console.");
@@ -108,8 +152,6 @@ export default function VoiceTest({  }) {
       setIsProcessing(false);
     }
   };
-
- 
 
   return (
     <div className="p-2">
