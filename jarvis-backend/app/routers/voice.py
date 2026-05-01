@@ -2,7 +2,7 @@ import shutil
 import base64
 
 from fastapi import APIRouter,UploadFile,File
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
 
 from ..services.voice_services.stt import speech_to_text
 from ..services.voice_services.llm import call_llm
@@ -18,22 +18,20 @@ async def voice_chat(file: UploadFile = File(...)):
     with open(settings.input_path_voice, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
         
-        user_text = speech_to_text(settings.input_path_voice)
-        print("User:", user_text)
+    user_text = speech_to_text(settings.input_path_voice)
+    print("User:", user_text)
 
-        response_text = call_llm(user_text)
-        print("Bot:", response_text)
 
-        # TTS
-        text_to_speech(response_text, settings.output_path_voice)
-        
-        with open(settings.output_path_voice, "rb") as f:
-            audio_bytes = f.read()
+    return {"user_text": user_text}
 
-        audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
 
-        return JSONResponse({
-            "user_text": user_text,
-            "response_text": response_text,
-            "audio": audio_base64
-        })
+@router.post("/tts")
+async def tts(data: dict):
+    text = data["text"]
+    
+    if not text or len(text.strip()) < 5:
+        return {"error": "Text too short for TTS"}
+
+    text_to_speech(text, settings.output_path_voice)
+
+    return FileResponse(settings.output_path_voice, media_type="audio/wav")
