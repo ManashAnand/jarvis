@@ -5,3 +5,5 @@
 .DS_Store
 
 :wq
+jarvis-backend/app/memory.db
+**/app/memory.db
