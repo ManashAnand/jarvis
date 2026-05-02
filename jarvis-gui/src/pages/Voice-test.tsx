@@ -14,8 +14,24 @@ export default function VoiceTest() {
     useChatStore();
 
   // 🧠 TTS QUEUE SYSTEM
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const queueRef = useRef<string[]>([]);
   const isPlayingRef = useRef(false);
+
+  function interruptTTS() {
+    // stop current audio
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+
+    // clear queue
+    queueRef.current = [];
+
+    // reset state
+    isPlayingRef.current = false;
+  }
 
   // 🔊 Clean + normalize text
   function cleanText(text: string) {
@@ -40,10 +56,12 @@ export default function VoiceTest() {
     const url = URL.createObjectURL(blob);
 
     const audio = new Audio(url);
+    currentAudioRef.current = audio;
 
     return new Promise<void>((resolve) => {
       audio.onended = () => {
         URL.revokeObjectURL(url);
+        currentAudioRef.current = null;
         resolve();
       };
       audio.play();
@@ -80,6 +98,7 @@ export default function VoiceTest() {
 
       // 🎤 START RECORDING
       if (!isRecording) {
+        interruptTTS();
         await invoke("start_recording");
         startTimeRef.current = Date.now();
         setIsRecording(true);
