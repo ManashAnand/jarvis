@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { readFile } from "@tauri-apps/plugin-fs";
-import { api } from "../constants/constant";
 import { useChatStore } from "../store/chatStore";
 import { streamChat } from "../helper/streamChat";
+
+
+import { useStreamingTTS } from "../hooks/useStreamingTTS";
+import { useVoiceRecorder } from "../hooks/useVoiceRecorder";
 
 export default function VoiceTest() {
   const [isRecording, setIsRecording] = useState(false);
@@ -13,160 +14,63 @@ export default function VoiceTest() {
   const { addUserMessage, addAssistantMessage, appendToLastMessage, setLoading } =
     useChatStore();
 
-  // 🧠 TTS QUEUE SYSTEM
-  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const queueRef = useRef<string[]>([]);
-  const isPlayingRef = useRef(false);
 
-  function interruptTTS() {
-    // stop current audio
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current.currentTime = 0;
-      currentAudioRef.current = null;
-    }
+  const { enqueue, interrupt } = useStreamingTTS();
+  const { recordAndTranscribe } = useVoiceRecorder();
+  
 
-    // clear queue
-    queueRef.current = [];
 
-    // reset state
-    isPlayingRef.current = false;
-  }
-
-  // 🔊 Clean + normalize text
-  function cleanText(text: string) {
-    return text
-      .replace(/[*#`]/g, "")
-      .replace(/\n+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  // 🔊 Play single audio
-  async function playTTS(text: string) {
-    const res = await fetch(`${api}/tts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text }),
-    });
-
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-
-    const audio = new Audio(url);
-    currentAudioRef.current = audio;
-
-    return new Promise<void>((resolve) => {
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        currentAudioRef.current = null;
-        resolve();
-      };
-      audio.play();
-    });
-  }
-
-  // 🔁 Process queue sequentially
-  async function processQueue() {
-    if (isPlayingRef.current) return;
-    if (queueRef.current.length === 0) return;
-
-    isPlayingRef.current = true;
-
-    const text = queueRef.current.shift()!;
-    await playTTS(text);
-
-    isPlayingRef.current = false;
-    processQueue();
-  }
-
-  // ➕ Add to queue
-  function enqueueTTS(text: string) {
-    const cleaned = cleanText(text);
-
-    if (cleaned.length < 10) return;
-
-    queueRef.current.push(cleaned);
-    processQueue();
-  }
 
   const handleClick = async () => {
     try {
       if (isProcessing) return;
 
-      // 🎤 START RECORDING
       if (!isRecording) {
-        interruptTTS();
-        await invoke("start_recording");
-        startTimeRef.current = Date.now();
+        interrupt();
         setIsRecording(true);
+        startTimeRef.current = Date.now();
         return;
       }
 
-      // 🛑 STOP RECORDING
       const duration = Date.now() - startTimeRef.current;
 
       if (duration < 1200) {
-        alert("Please speak for at least 1 second");
+        alert("Speak longer");
         return;
       }
 
       setIsRecording(false);
       setIsProcessing(true);
 
-      const path = await invoke<string>("stop_recording");
+      const userText = await recordAndTranscribe();
 
-      await new Promise((r) => setTimeout(r, 200));
-
-      const fileData = await readFile(path);
-      const blob = new Blob([fileData], { type: "audio/wav" });
-
-      const formData = new FormData();
-      formData.append("file", blob, "audio.wav");
-
-      const res = await fetch(`${api}/voice`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error("Backend error: " + res.status);
-      }
-
-      const data = await res.json();
-
-      // 💬 UI SETUP
-      addUserMessage(data.user_text);
+      addUserMessage(userText);
       addAssistantMessage("");
 
       let buffer = "";
 
       await streamChat(
-        data.user_text,
+        userText,
         (token) => {
           buffer += token;
           appendToLastMessage(token);
 
-          // 🧠 Sentence detection
-          if (/[.?!]/.test(buffer)) {
-            enqueueTTS(buffer);
-            buffer = "";
+          const sentences = buffer.split(/(?<=[.?!])/);
+
+          if (sentences.length > 1) {
+            const complete = sentences.shift();
+            buffer = sentences.join("");
+
+            if (complete) enqueue(complete);
           }
         },
-        async () => {
+        () => {
           setLoading(false);
-
-          // leftover text
-          if (buffer.length > 5) {
-            enqueueTTS(buffer);
-          }
+          if (buffer.length > 5) enqueue(buffer);
         }
       );
     } catch (err) {
-      console.error("Voice error:", err);
-      alert("Something went wrong. Check console.");
+      console.error(err);
     } finally {
       setIsProcessing(false);
     }
