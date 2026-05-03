@@ -25,7 +25,7 @@ export default function ChatPage() {
   return (
     <div className="h-screen flex bg-black">
       <Sidebar />
-
+      
       <div className="flex-1 flex flex-col">
         <ChatHeader />
         <ChatMessages />
