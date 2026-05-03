@@ -1,6 +1,6 @@
 import VoiceTest from "@/pages/Voice-test";
 import { motion } from "framer-motion";
-import { Plus, ArrowUp, X, Send } from "lucide-react";
+import { Plus, X, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface AppIcon {
@@ -69,20 +69,20 @@ export default function ChatInput({
     },
   };
 
-  const micPulse = {
-    animate: isRecording
-      ? {
-          scale: [1, 1.15, 1],
-          transition: {
-            duration: 1,
-            repeat: Infinity,
-            ease: "easeInOut" as const,
-          },
-        }
-      : {
-          scale: 1,
-        },
-  };
+  // const micPulse = {
+  //   animate: isRecording
+  //     ? {
+  //         scale: [1, 1.15, 1],
+  //         transition: {
+  //           duration: 1,
+  //           repeat: Infinity,
+  //           ease: "easeInOut" as const,
+  //         },
+  //       }
+  //     : {
+  //         scale: 1,
+  //       },
+  // };
 
   const recordingDot = {
     animate: isRecording
@@ -214,30 +214,12 @@ export default function ChatInput({
           />
 
           {/* Voice/Mic Section */}
-          <motion.button
-            variants={buttonHoverVariants}
-            whileHover="hover"
-            whileTap="tap"
-            onClick={() => setIsRecording(!isRecording)}
-            className={`p-2 rounded-lg transition-all relative ${
-              isRecording
-                ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                : "text-white/40 hover:text-white/80 hover:bg-white/5"
-            }`}
-          >
             <div className="relative">
               <VoiceTest
-                isRecording={isRecording}
-                setIsRecording={setIsRecording}
               />
             </div>
 
-            {/* Recording Indicator - Glowing led effect */}
-            <motion.div
-              variants={recordingDot}
-              className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)]"
-            />
-          </motion.button>
+           
 
           {/* Send Button */}
           <motion.button

@@ -5,22 +5,19 @@ import { useChatStore } from "../store/chatStore";
 import { streamChat } from "../helper/streamChat";
 import { useStreamingTTS } from "../hooks/useStreamingTTS";
 import { useVoiceRecorder } from "../hooks/useVoiceRecorder";
+import { invoke } from "@tauri-apps/api/core";
 
-import { Dispatch, SetStateAction } from 'react';
-
-export default function VoiceTest({isRecording,setIsRecording}:{
-  isRecording: boolean,
-  setIsRecording: Dispatch<SetStateAction<boolean>>;
-}) {
+export default function VoiceTest() {
   const [isProcessing, setIsProcessing] = useState(false);
   const startTimeRef = useRef<number>(0);
+   const [isRecording, setIsRecording] = useState(false);
 
   const { addUserMessage, addAssistantMessage, appendToLastMessage, setLoading } =
     useChatStore();
 
   const { enqueue, interrupt } = useStreamingTTS();
   const { recordAndTranscribe } = useVoiceRecorder();
-
+ 
   const handleClick = async () => {
     try {
       if (isProcessing) return;
@@ -29,27 +26,33 @@ export default function VoiceTest({isRecording,setIsRecording}:{
         interrupt();
         setIsRecording(true);
         startTimeRef.current = Date.now();
+
+        await invoke("start_recording"); 
+
         return;
       }
 
-      const duration = Date.now() - startTimeRef.current;
-
-      if (duration < 1200) {
-        alert("Speak longer");
-        return;
-      }
-
+      // ⏹ STOP RECORDING
       setIsRecording(false);
       setIsProcessing(true);
 
-      const userText = await recordAndTranscribe();
+      const duration = Date.now() - startTimeRef.current;
+
+      const path = await invoke<string>("stop_recording");
+
+      if (duration < 1200) {
+        alert("Speak longer");
+        setIsProcessing(false);
+        return;
+      }
+
+      const userText = await recordAndTranscribe(path); 
 
       if (!userText || userText.trim() === "") {
-        console.error("Transcription returned empty text");
+        console.log("Empty transcription");
         setIsProcessing(false);
-        return; 
+        return;
       }
-      alert("Transcription returned empty text")
 
       addUserMessage(userText);
       addAssistantMessage("");
@@ -61,6 +64,7 @@ export default function VoiceTest({isRecording,setIsRecording}:{
         (token) => {
           buffer += token;
           appendToLastMessage(token);
+
           const sentences = buffer.split(/(?<=[.?!])/);
           if (sentences.length > 1) {
             const complete = sentences.shift();
