@@ -1,9 +1,101 @@
-**/.env
-**/venv
-**/__pycache__
-**/node_modules
+jarvis-backend/memory.db
+jarvis-backend/app/memory.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.env/
+.env
+
+# FastAPI / logs
+*.log
+
+# OS
 .DS_Store
 
-:wq
-jarvis-backend/app/memory.db
-**/app/memory.db
+# IDE
+.vscode/
+.idea/
+
+# pytest (if you add later)
+.pytest_cache/
+
+# mypy / typing
+.mypy_cache/
+
+# pip-tools (keep these!)
+# requirements.txt ✅ keep
+# requirements.in  ✅ keep
+
+app/input-audio-files/*
+app/output-audio-files/*
+
+app/message.dbjarvis-backend/app/memory.db
+
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/.cargo/
+
+# Tauri build output
+src-tauri/target/release/
+src-tauri/target/debug/
+
+# Vite cache
+.vite/
+
+
+#input audio files
+input_audio/*

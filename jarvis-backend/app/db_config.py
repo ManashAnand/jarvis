@@ -8,6 +8,9 @@ cursor = conn.cursor()
 
 
 def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,5 +20,12 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-    conn.commit()
 
+    conn.commit()
+    conn.close()
+    
+
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
