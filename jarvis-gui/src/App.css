@@ -2,16 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
-@import "tailwindcss";
 
-/* Add this line to include your custom folder */
-@source "../src/component"; 
-
-/* If you have other custom folders, add them too */
-@source "../src/pages";
 @custom-variant dark (&:is(.dark *));
-
-
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
 }
@@ -19,6 +11,20 @@
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafb);
 }
+
+@layer base {
+  :root {
+    /* Set the internal sidebar variable to transparent */
+    --sidebar-background: transparent;
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Force the actual data-attribute container to be see-through */
+[data-sidebar="sidebar"] {
+  background-color: transparent !important;
+}
+
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -26,7 +32,7 @@
   font-weight: 400;
 
   color: #0f0f0f;
-  background-color: #f6f6f6;
+ background-color: transparent;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -57,14 +63,14 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: transparent;
+  --sidebar-foreground: transparent;
+  --sidebar-primary: transparent;
+  --sidebar-primary-foreground: transparent;
+  --sidebar-accent: transparent;
+  --sidebar-accent-foreground: transparent;
+  --sidebar-border: transparent;
+  --sidebar-ring: transparent;
 }
 
 .container {
@@ -163,7 +169,7 @@ button {
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Geist Variable', sans-serif;
+  --font-sans: "Geist Variable", sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -243,7 +249,8 @@ button {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+  background: transparent;
   }
   html {
     @apply font-sans;
