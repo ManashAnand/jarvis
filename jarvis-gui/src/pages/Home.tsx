@@ -2,7 +2,6 @@ import ChatHeader from "../component/ChatHeader";
 import ChatMessages from "../component/ChatMessages";
 import ChatInput from "../component/ChatInput";
 import { streamChat } from "../helper/streamChat";
-import Sidebar from "../component/Sidebar";
 import { useChatStore } from "../store/chatStore";
 
 
@@ -23,14 +22,14 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen flex bg-black">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col">
+   <div className="flex flex-col h-full bg-transparent">
+      {/* Header padding-left added to avoid overlapping with the SidebarTrigger */}
+      <div className="pl-12">
         <ChatHeader />
-        <ChatMessages />
-        <ChatInput onSend={sendMessage} loading={loading} />
       </div>
+      
+      <ChatMessages />
+      <ChatInput onSend={sendMessage} loading={loading} />
     </div>
   );
 }

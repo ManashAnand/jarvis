@@ -2,8 +2,16 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "tailwindcss";
 
+/* Add this line to include your custom folder */
+@source "../src/component"; 
+
+/* If you have other custom folders, add them too */
+@source "../src/pages";
 @custom-variant dark (&:is(.dark *));
+
+
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
 }
