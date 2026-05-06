@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal
+from typing import Literal,Optional
 
 
 class MemoryFact(BaseModel):
@@ -14,4 +14,5 @@ class MemoryFact(BaseModel):
         "work",
         "skill"
     ]
+    metadata: Optional[dict] = None
     confidence: float
