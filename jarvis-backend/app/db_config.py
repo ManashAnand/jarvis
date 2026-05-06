@@ -29,6 +29,7 @@ def init_db():
         relation TEXT NOT NULL,
         object TEXT NOT NULL,
         type TEXT NOT NULL,
+        metadata TEXT NOT NULL,
         confidence REAL DEFAULT 0.0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
