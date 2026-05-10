@@ -1,13 +1,31 @@
+import { Attachment } from "@/store/chatStore";
+
+
 export async function streamChat(
-  input: string,
+  input: string | undefined,
+  attachments: Attachment[] | undefined,
   onToken: (token: string) => void,
   onDone: () => void
 ) {
   const API_URL = import.meta.env.VITE_API_URL;
+
+   const formData = new FormData();
+
+    if (input) {
+      formData.append("user_query", input);
+    }
+    
+    attachments?.forEach((attachment) => {
+        formData.append(
+          "files",
+          attachment.file
+        );
+      });
+
+
   const res = await fetch(`${API_URL}/chat-stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_query: input }),
+    body: formData,
   });
 
   const reader = res.body!.getReader();

@@ -2,23 +2,38 @@ import ChatHeader from "../component/ChatHeader";
 import ChatMessages from "../component/ChatMessages";
 import ChatInput from "../component/ChatInput";
 import { streamChat } from "../helper/streamChat";
-import { useChatStore } from "../store/chatStore";
+import { useChatStore,Attachment } from "../store/chatStore";
 
 
-export default function ChatPage() {
-  const {  addUserMessage, addAssistantMessage, appendToLastMessage, setLoading, loading } = useChatStore();
+export default function Home() {
+  const {
+    addUserMessage,
+    addAssistantMessage,
+    appendToLastMessage,
+    setLoading,
+    loading,
+    clearAttachments,
+  } = useChatStore();
 
-  const sendMessage = async (input: string) => {
-    addUserMessage(input);
+  const sendMessage = async (input?: string,  attachments?: Attachment[]) => {
+    addUserMessage(
+      input || "",
+      attachments
+    );
     addAssistantMessage("");
 
     setLoading(true);
 
     await streamChat(
       input,
+      
+      attachments,
       (token) => appendToLastMessage(token),
-      () => setLoading(false)
-    );
+      () => {
+        setLoading(false)
+        clearAttachments()        
+      }
+      );
   };
 
   return (

@@ -37,7 +37,7 @@ def save_message(role: str, content: str):
     conn.commit()
     conn.close()
     
-    
+
     
  
     
@@ -78,3 +78,49 @@ def search_similar(query: str, top_k: int = 5, threshold: float = 0.2):
     scored.sort(key=lambda x: x["score"], reverse=True)
 
     return scored[:top_k]
+
+
+def save_image(
+    file_path: str,
+    original_name: str,
+    image_context: str
+):
+
+    conn = get_db()
+
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT 1 FROM images
+        WHERE file_path = ?
+    """, (file_path,))
+
+    if cursor.fetchone():
+
+        conn.close()
+
+        return
+
+    embedding = get_embedding(
+        image_context
+    )
+    
+
+    cursor.execute("""
+        INSERT INTO images (
+            file_path,
+            original_name,
+            image_context,
+            embedding
+        )
+        VALUES (?, ?, ?, ?)
+    """, (
+        file_path,
+        original_name,
+        image_context,
+        json.dumps(embedding)
+    ))
+
+    conn.commit()
+
+    conn.close()

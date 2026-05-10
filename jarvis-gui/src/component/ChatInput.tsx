@@ -2,37 +2,41 @@ import VoiceTest from "@/pages/Voice-test";
 import { motion } from "framer-motion";
 import { Plus, X, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import {useChatStore,Attachment} from "@/store/chatStore"
 
-interface AppIcon {
-  id: string;
-  color: string;
-  icon: React.ReactNode;
-}
+
 
 export default function ChatInput({
   onSend,
   loading,
 }: {
-  onSend: (msg: string) => void;
+  onSend: (
+    msg?: string,
+   attachments?: Attachment[]
+  ) => void;
   loading: boolean;
 }) {
-  const [appIcons, setAppIcons] = useState<AppIcon[]>([
-    { id: "1", color: "bg-blue-600", icon: null },
-    { id: "2", color: "bg-gray-700", icon: "📋" },
-  ]);
   const [message, setMessage] = useState("");
-  const [hoveredIcon, setHoveredIcon] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const {
+    attachments,
+    addAttachment,
+    removeAttachment,
+    clearAttachments,
+  } = useChatStore();
 
   const handleSend = () => {
-    if (!message.trim()) return;
-    onSend(message);
+    if (
+        !message.trim() &&
+        attachments.length === 0
+      ) {
+        return;
+      }
+    onSend(message, attachments);
+
     setMessage("");
+    clearAttachments();
   };
 
-  const removeIcon = (id: string) => {
-    setAppIcons(appIcons.filter((icon) => icon.id !== id));
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -69,35 +73,6 @@ export default function ChatInput({
     },
   };
 
-  // const micPulse = {
-  //   animate: isRecording
-  //     ? {
-  //         scale: [1, 1.15, 1],
-  //         transition: {
-  //           duration: 1,
-  //           repeat: Infinity,
-  //           ease: "easeInOut" as const,
-  //         },
-  //       }
-  //     : {
-  //         scale: 1,
-  //       },
-  // };
-
-  const recordingDot = {
-    animate: isRecording
-      ? {
-          opacity: [1, 0.4, 1],
-          transition: {
-            duration: 1.2,
-            repeat: Infinity,
-            ease: "easeInOut" as const,
-          },
-        }
-      : {
-          opacity: 0,
-        },
-  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Check if Enter was pressed without Shift
@@ -134,45 +109,52 @@ export default function ChatInput({
     {/* Main Container - The "Frosted Glass" Layer */}
     <div className="bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/10 space-y-6 p-4 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]">
       
-      {/* App Icons Section */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="flex gap-3"
-      >
-        {appIcons.map((app) => (
+     {/* Attachments Preview */}
+        {attachments.length > 0 && (
           <motion.div
-            key={app.id}
-            variants={itemVariants}
-            onHoverStart={() => setHoveredIcon(app.id)}
-            onHoverEnd={() => setHoveredIcon(null)}
-            className="relative group"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="flex gap-3 flex-wrap"
           >
-            <motion.div
-              whileHover={{ y: -6 }}
-              className={`${app.color} w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer transition-all shadow-lg border border-white/10 backdrop-blur-md`}
-            >
-              <span className="text-3xl">{app.icon}</span>
-            </motion.div>
+            {attachments.map((attachment) => (
+              <motion.div
+                key={attachment.id}
+                variants={itemVariants}
+                className="relative group"
+              >
 
-            {/* Close Button - Glass style */}
-            <motion.button
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{
-                opacity: hoveredIcon === app.id ? 1 : 0,
-                scale: hoveredIcon === app.id ? 0.7 : 0.2,
-              }}
-              whileHover={{ scale: 0.8 }}
-              whileTap={{ scale: 0.4 }}
-              onClick={() => removeIcon(app.id)}
-              className="absolute -top-4 -right-4 bg-black/60 backdrop-blur-md border border-white/20 rounded-full p-0.5 hover:bg-red-500/50 transition-colors shadow-md"
-            >
-              <X size={16} className="text-white" />
-            </motion.button>
+                {/* IMAGE */}
+                {attachment.type === "image" && (
+                  <img
+                    src={attachment.preview}
+                    className="w-20 h-20 object-cover rounded-2xl border border-white/10"
+                  />
+                )}
+
+                {/* PDF */}
+                {attachment.type === "pdf" && (
+                  <div className="w-20 h-20 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-white text-xs">
+                    PDF
+                  </div>
+                )}
+
+                {/* REMOVE BUTTON */}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() =>
+                    removeAttachment(attachment.id)
+                  }
+                  className="absolute -top-2 -right-2 bg-black/60 backdrop-blur-md border border-white/20 rounded-full p-1"
+                >
+                  <X size={14} className="text-white" />
+                </motion.button>
+
+              </motion.div>
+            ))}
           </motion.div>
-        ))}
-      </motion.div>
+        )}
 
       {/* Message Input Area */}
       <motion.div
@@ -188,19 +170,42 @@ export default function ChatInput({
           className="flex items-center gap-3 bg-white/5 backdrop-blur-xl rounded-2xl px-4 py-3 border border-white/10 hover:border-white/20 transition-all focus-within:border-white/30 focus-within:bg-white/10 shadow-inner"
         >
           {/* Left Actions */}
-          <div className="flex items-center gap-1">
-            <motion.button
-              variants={buttonHoverVariants}
-              whileHover="hover"
-              whileTap="tap"
-              className="text-white/40 hover:text-white/80 transition-colors p-2 rounded-lg hover:bg-white/5"
-            >
-              <Plus size={20} />
-            </motion.button>
+         <div className="flex items-center gap-1">
+
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              multiple
+              hidden
+              id="image-upload"
+              onChange={(e) => {
+                const files = e.target.files;
+
+                  if (!files) return;
+
+                  Array.from(files).forEach((file) => {
+                    addAttachment(file);
+                  });
+              }}
+            />
+
+            <label htmlFor="image-upload">
+              <motion.div
+                variants={buttonHoverVariants}
+                whileHover="hover"
+                whileTap="tap"
+                className="text-white/40 hover:text-white/80 transition-colors p-2 rounded-lg hover:bg-white/5 cursor-pointer"
+              >
+                <Plus size={20} />
+              </motion.div>
+            </label>
+
           </div>
 
           {/* Divider - Light version for glass */}
           <div className="w-px h-6 bg-white/10" />
+
+
 
           {/* Input Field */}
           <textarea
@@ -228,7 +233,10 @@ export default function ChatInput({
             whileTap="tap"
             className="bg-white/90 hover:bg-white text-black rounded-full p-2 shadow-lg transition-all flex items-center justify-center flex-shrink-0 disabled:opacity-20"
             onClick={handleSend}
-            disabled={loading || !message.trim()}
+            disabled={
+              loading ||
+               (!message.trim() && attachments.length === 0)
+            }
           >
             <Send size={20} />
           </motion.button>

@@ -31,5 +31,6 @@ venv/
 
 app/input-audio-files/*
 app/output-audio-files/*
+app/input-image-files/*
 
 app/message.dbjarvis-backend/app/memory.db

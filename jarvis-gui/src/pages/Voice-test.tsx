@@ -12,8 +12,15 @@ export default function VoiceTest() {
   const startTimeRef = useRef<number>(0);
    const [isRecording, setIsRecording] = useState(false);
 
-  const { addUserMessage, addAssistantMessage, appendToLastMessage, setLoading } =
-    useChatStore();
+    const {
+      addUserMessage,
+      addAssistantMessage,
+      appendToLastMessage,
+      setLoading,
+      selectedImage,
+      selectedImagePreview,
+      clearSelectedImage,
+    } = useChatStore();
 
   const { enqueue, interrupt } = useStreamingTTS();
   const { recordAndTranscribe } = useVoiceRecorder();
@@ -54,13 +61,17 @@ export default function VoiceTest() {
         return;
       }
 
-      addUserMessage(userText);
+      addUserMessage(
+        userText,
+        selectedImagePreview || undefined
+      );
       addAssistantMessage("");
 
       let buffer = "";
 
       await streamChat(
         userText,
+        selectedImage || undefined,
         (token) => {
           buffer += token;
           appendToLastMessage(token);
@@ -74,6 +85,7 @@ export default function VoiceTest() {
         },
         () => {
           setLoading(false);
+          clearSelectedImage();
           if (buffer.length > 5) enqueue(buffer);
         }
       );
